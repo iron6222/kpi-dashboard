@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>KPI 多頁動態看板</title>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: #dcebf7;
+    font-family: "Microsoft JhengHei", "Noto Sans TC", Arial, sans-serif;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.dashboard {
+    width: 1080px;
+    height: 620px;
+    background: #dcebf7;
+    position: relative;
+    overflow: hidden;
+    transform-origin: center center;
+    flex-shrink: 0;
+}
+
+.title-cn {
+    position: absolute;
+    top: 32px;
+    width: 100%;
+    text-align: center;
+    font-size: 38px;
+    font-weight: 800;
+    color: #333;
+    line-height: 1;
+}
+
+.title-en {
+    position: absolute;
+    top: 76px;
+    width: 100%;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+}
+
+.kpi {
+    position: absolute;
+    top: 118px;
+    width: 448px;
+    height: 86px;
+    border: 3px solid #8c8c8c;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.kpi1 { left: 34px; }
+.kpi2 { right: 34px; }
+
+.kpi-title {
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    font-size: 20px;
+    font-weight: 800;
+    color: #333;
+    line-height: 1.18;
+}
+
+.kpi-value {
+    position: absolute;
+    right: 16px;
+    bottom: 8px;
+    font-size: 38px;
+    font-weight: 800;
+    color: #3f5069;
+}
+
+.kpi-value span { font-size: 22px; color: #333; margin-left: 3px; }
+
+.line-h {
+    position: absolute;
+    top: 218px;
+    left: 34px;
+    width: 1012px;
+    border-top: 1px solid #b8b8b8;
+}
+
+.line-v {
+    position: absolute;
+    left: 540px;
+    top: 220px;
+    height: 330px;
+    border-left: 1px dashed #b8b8b8;
+}
+
+.section {
+    position: absolute;
+    top: 242px;
+    font-size: 24px;
+    font-weight: 800;
+    color: #333;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.section1 { left: 90px; }
+.section2 { left: 635px; }
+
+.unit {
+    position: absolute;
+    bottom: 20px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #333;
+}
+
+.unit1 { left: 300px; }
+.unit2 { right: 70px; }
+
+.note {
+    position: absolute;
+    left: 58px;
+    bottom: 58px;
+    font-size: 14px;
+    color: #333;
+    line-height: 1.45;
+    max-width: 980px;
+}
+
+/* =========================================================
+   每一頁的 note 可獨立調整
+   page-0：供應率
+   page-1：庫存月數
+   page-2：誤欠率
+   page-3：盤點結果
+   page-4：太陽能發電
+   page-5：包材回收
+   可調整項目：
+   left / bottom / font-size / line-height / max-width
+========================================================= */
+
+/* 第 1 頁：供應率 */
+.note-page-0{
+    left:58px;
+    bottom:58px;
+    font-size:14px;
+    line-height:1.45;
+    max-width:980px;
+}
+
+/* 第 2 頁：庫存月數
+   目前設定：放到右圖下方，避免與左圖年度座標重疊
+*/
+.note-page-1{
+    left:545px;
+    bottom:26px;
+    font-size:12px;
+    line-height:1.35;
+    max-width:500px;
+}
+
+/* 第 3 頁：誤欠率 */
+.note-page-2{
+    left:58px;
+    bottom:58px;
+    font-size:14px;
+    line-height:1.45;
+    max-width:980px;
+}
+
+/* 第 4 頁：盤點結果 */
+.note-page-3{
+    left:545px;
+    bottom:10px;
+    font-size:12px;
+    line-height:1.45;
+    max-width:760px;
+}
+
+/* 第 5 頁：太陽能發電 */
+.note-page-4{
+    left:58px;
+    bottom:58px;
+    font-size:14px;
+    line-height:1.45;
+    max-width:980px;
+}
+
+/* 第 6 頁：包材回收 */
+.note-page-5{
+    left:58px;
+    bottom:58px;
+    font-size:14px;
+    line-height:1.45;
+    max-width:980px;
+}
+
+/* =========================================================
+   每一頁的圖表位置可獨立調整
+   annual-svg  = 左側年度圖
+   monthly-svg = 右側月推移圖
+
+   注意：
+   top 數字越小，圖表越往上
+   left 數字越大，圖表越往右
+========================================================= */
+
+/* 預設：所有頁面共用位置 */
+.annual-svg{
+    left:60px !important;
+    top:325px !important;
+}
+
+.monthly-svg{
+    left:525px !important;
+    top:325px !important;
+}
+
+/* 第 2 頁：庫存月數
+   目前設定：兩張圖都往上移，讓 note 可以放在右圖下方
+*/
+.dashboard.page-1 .annual-svg{
+    left:60px !important;
+    top:300px !important;
+}
+
+.dashboard.page-1 .monthly-svg{
+    left:525px !important;
+    top:300px !important;
+}
+.dashboard.page-3 .annual-svg{
+    left:80px !important;
+    top:310px !important;
+}
+
+.dashboard.page-3 .monthly-svg{
+    left:525px !important;
+    top:310px !important;
+}
+
+/* 如需調整其他頁面，可照這個格式增加：
+.dashboard.page-2 .annual-svg{ top:310px !important; }
+.dashboard.page-2 .monthly-svg{ top:310px !important; }
+*/
+
+svg { position: absolute; overflow: visible; }
+.grid { stroke: #c8d4df; stroke-width: 1; }
+.bar {
+    fill: #3f5069;
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: barWave 1.4s ease forwards;
+}
+.label { font-size: 13px; text-anchor: middle; fill: #111; }
+.axis { font-size: 13px; text-anchor: middle; fill: #222; }
+.target { stroke: #e86f16; stroke-width: 4; fill:none; }
+
+@keyframes barWave {
+    0% { transform: translateY(12px) scaleY(0); opacity: 0; }
+    45% { transform: translateY(-4px) scaleY(1.08); opacity: 1; }
+    100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+
+.legend {
+    position: absolute;
+    left: 545px;
+    top: 470px;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #444;
+    line-height: 32px;
+    width: 160px;
+}
+
+.legend-row { display: flex; align-items: center; height: 32px; }
+.legend-box { width: 22px; height: 9px; background: #3f5069; margin-right: 8px; }
+.legend-line { width: 24px; border-top: 3px solid #e86f16; margin-right: 8px; }
+
+button {
+    padding: 5px 14px;
+    font-size: 14px;
+    background: #fff;
+    border: 1px solid #888;
+    border-radius: 2px;
+    cursor:pointer;
+}
+
+.page-tabs{
+    position:absolute;
+    top:40px;
+    right:0px;
+    display:flex;
+    gap:2px;
+    z-index:10000;
+}
+
+.page-tab{
+    padding:4px 8px;
+    font-size:10px;
+    border:1px solid #9aa8b6;
+    background:rgba(255,255,255,0.55);
+    border-radius:4px;
+    cursor:pointer;
+}
+
+.page-tab.active{
+    background:#3f5069;
+    color:#fff;
+}
+
+
+/* =========================================================
+   每一頁的單位位置可獨立調整
+   page-0：供應率
+   page-1：庫存月數
+   page-2：誤欠率
+   page-3：盤點結果
+   page-4：太陽能發電
+   page-5：包材回收
+
+   調整方式：
+   bottom 數字越大，單位越往上
+   left   控制左邊單位左右位置
+   right  控制右邊單位左右位置
+========================================================= */
+
+/* 第 1 頁：供應率 */
+.dashboard.page-0 .unit1{
+    left:350px !important;
+    bottom:20px !important;
+}
+.dashboard.page-0 .unit2{
+    right:70px !important;
+    bottom:20px !important;
+}
+
+/* 第 2 頁：庫存月數 */
+.dashboard.page-1 .unit1{
+    left:300px !important;
+    bottom:55px !important;
+}
+.dashboard.page-1 .unit2{
+    right:70px !important;
+    bottom:55px !important;
+}
+
+/* 第 3 頁：誤欠率 */
+.dashboard.page-2 .unit1{
+    left:350px !important;
+    bottom:20px !important;
+}
+.dashboard.page-2 .unit2{
+    right:70px !important;
+    bottom:20px !important;
+}
+
+/* 第 4 頁：盤點結果 */
+.dashboard.page-3 .unit1{
+    left:200px !important;
+    bottom:45px !important;
+}
+.dashboard.page-3 .unit2{
+    right:70px !important;
+    bottom:45px !important;
+}
+
+/* 第 5 頁：太陽能發電的單位位置，已移到下方「太陽能發電頁面專用設定」集中管理 */
+
+/* 第 6 頁：包材回收 */
+.dashboard.page-5 .unit1{
+    left:300px !important;
+    bottom:20px !important;
+}
+.dashboard.page-5 .unit2{
+    right:70px !important;
+    bottom:20px !important;
+}
+
+/* =========================================================
+   ESG 頁面底色設定
+   page-4：太陽能發電
+   page-5：包材回收
+   注意：左右滿版背景由 renderPage() 裡的 JS 控制
+========================================================= */
+
+.dashboard.page-4,
+.dashboard.page-5{
+    background:#dfeee2 !important;
+}
+
+/* =========================================================
+   盤點結果 KPI 專用設定（page-3）
+   只影響「盤點結果」頁，不影響其他頁面
+   可調整項目：
+   font-size = 字體大小
+   line-height = 行距
+   max-width = 標題可用寬度
+   right / bottom = KPI 數值位置
+========================================================= */
+
+.dashboard.page-3 .kpi-title{
+    font-size:17px !important;
+    line-height:1.15 !important;
+    max-width:400px !important;
+}
+
+.dashboard.page-3 .kpi-value{
+    font-size:30px !important;
+    right:18px !important;
+    bottom:14px !important;
+}
+.dashboard.page-4 .kpi-title{
+    font-size:17px !important;
+    line-height:1.15 !important;
+    max-width:400px !important;
+}
+
+.dashboard.page-4 .kpi-value{
+    font-size:30px !important;
+    right:18px !important;
+    bottom:14px !important;
+}
+
+/* =========================================================
+   KPI 上方卡片動態效果
+   用途：切換頁面或匯入 Excel 後，讓當年度累計 / 達成率有動態提示
+========================================================= */
+
+.kpi.kpi-animate{
+    animation:kpiCardPulse 1.2s ease both;
+}
+
+.kpi-value.kpi-number-animate{
+    animation:kpiNumberPop 1.2s ease both;
+}
+
+@keyframes kpiCardPulse{
+    0%{
+        transform:scale(0.98);
+        box-shadow:0 0 0 rgba(63,80,105,0);
+        border-color:#8c8c8c;
+    }
+    45%{
+        transform:scale(1.025);
+        box-shadow:0 0 18px rgba(63,80,105,0.35);
+        border-color:#3f5069;
+    }
+    100%{
+        transform:scale(1);
+        box-shadow:0 0 0 rgba(63,80,105,0);
+        border-color:#8c8c8c;
+    }
+}
+
+@keyframes kpiNumberPop{
+    0%{
+        transform:translateY(8px) scale(0.92);
+        opacity:0.2;
+    }
+    45%{
+        transform:translateY(-4px) scale(1.08);
+        opacity:1;
+    }
+    100%{
+        transform:translateY(0) scale(1);
+        opacity:1;
+    }
+}
+
+/* =========================================================
+   Excel 匯入區
+   每月資料請修改 KPI資料輸入模板.xlsx，再用此按鈕匯入
+========================================================= */
+.excel-loader{
+    position:fixed;
+    left:14px;
+    top:200px;
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    font-size:12px;
+    color:#333;
+    width:130px;
+}
+
+.excel-actions{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+}
+
+.excel-btn{
+    background:#ffffff;
+    border:1px solid #9aa8b6;
+    border-radius:4px;
+    padding:7px 8px;
+    cursor:pointer;
+    box-shadow:0 1px 2px rgba(0,0,0,.08);
+    font-size:13px;
+    width:100%;
+    box-sizing:border-box;
+    text-align:center;
+}
+
+.excel-btn:hover{
+    background:#f3f7fb;
+}
+
+.excel-btn input{
+    display:none;
+}
+
+#excelStatus{
+    background:rgba(255,255,255,0.45);
+    border:1px solid rgba(154,168,182,0.45);
+    border-radius:4px;
+    padding:6px 8px;
+    font-size:11px;
+    color:#4d5b66;
+    line-height:1.35;
+    word-break:break-all;
+}
+/* =========================================================
+   盤點結果頁（page-3）專用圖例設定
+========================================================= */
+
+.dashboard.page-3 .legend{
+    left: 0px !important;
+    top: 450px !important;
+
+    font-size: 12px !important;
+    line-height: 42px !important;
+
+    width: 180px !important;
+}
+
+/* 圖例色塊 */
+.dashboard.page-3 .legend-box{
+    width: 20px !important;
+    height: 12px !important;
+}
+
+/* 圖例橘線 */
+.dashboard.page-3 .legend-line{
+    width: 20px !important;
+    border-top: 4px solid #e86f16 !important;
+}
+
+/* =========================================================
+   太陽能發電頁面專用設定（page-4）
+   只影響「太陽能發電」頁面
+========================================================= */
+
+/* 上方 KPI 數值大小與位置 */
+.dashboard.page-4 .kpi-value{
+    font-size:34px !important;   /* 數值字體大小 */
+    right:22px !important;       /* 數字越大越往左，越小越往右 */
+    bottom:12px !important;      /* 數字越大越往上，越小越往下 */
+}
+
+/* 上方 KPI 單位大小，例如：萬度、% */
+.dashboard.page-4 .kpi-value span{
+    font-size:20px !important;   /* 單位字體大小 */
+}
+
+/* 左下單位位置與大小 */
+.dashboard.page-4 .unit1{
+    left:300px !important;       /* 數字越大越往右 */
+    bottom:20px !important;      /* 數字越大越往上 */
+    font-size:20px !important;   /* 單位字體大小 */
+}
+
+/* 右下單位位置與大小 */
+.dashboard.page-4 .unit2{
+    right:60px !important;       /* 數字越大越往左 */
+    bottom:20px !important;      /* 數字越大越往上 */
+    font-size:20px !important;   /* 單位字體大小 */
+}
+
+/* 隱藏太陽能發電頁圖例 */
+.dashboard.page-4 .legend{
+    display:none !important;     /* 不顯示圖例 */
+}
+
+
+/* 目標線最後顯示動畫 */
+.target{
+    stroke-dasharray:900;
+    stroke-dashoffset:900;
+    animation:targetLineDraw 1.1s ease forwards;
+}
+
+@keyframes targetLineDraw{
+    from{
+        stroke-dashoffset:900;
+        opacity:0;
+    }
+    to{
+        stroke-dashoffset:0;
+        opacity:1;
+    }
+}
+
+
+/* =========================================================
+   完整動畫流程設定
+   1. 頁面淡入
+   2. 長條依序出現
+   3. 數值標籤浮現
+   4. KPI 數字最後計數
+   5. 目標線最後畫出
+========================================================= */
+
+.dashboard.page-fade{
+    animation:pageFadeIn 0.65s ease both;
+}
+
+@keyframes pageFadeIn{
+    from{
+        opacity:0;
+    }
+    to{
+        opacity:1;
+    }
+}
+
+/* 長條上方數值標籤：等長條出現後再浮現 */
+.value-label{
+    opacity:0;
+    animation:valueLabelFadeIn 0.45s ease 0.75s forwards;
+}
+
+@keyframes valueLabelFadeIn{
+    from{
+        opacity:0;
+        transform:translateY(8px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+/* KPI 數字計數時的收尾提示 */
+.kpi.kpi-counting{
+    animation:kpiCardPulse 0.9s ease both;
+}
+
+.kpi-value.kpi-counting-number{
+    animation:kpiNumberPop 0.9s ease both;
+}
+
+@keyframes kpiCardPulse{
+    0%{
+        transform:scale(0.99);
+        box-shadow:0 0 0 rgba(63,80,105,0);
+        border-color:#8c8c8c;
+    }
+    45%{
+        transform:scale(1.025);
+        box-shadow:0 0 18px rgba(63,80,105,0.35);
+        border-color:#3f5069;
+    }
+    100%{
+        transform:scale(1);
+        box-shadow:0 0 0 rgba(63,80,105,0);
+        border-color:#8c8c8c;
+    }
+}
+
+@keyframes kpiNumberPop{
+    0%{
+        transform:translateY(8px) scale(0.95);
+        opacity:0.3;
+    }
+    45%{
+        transform:translateY(-3px) scale(1.06);
+        opacity:1;
+    }
+    100%{
+        transform:translateY(0) scale(1);
+        opacity:1;
+    }
+}
+
+
+/* =========================================================
+   首頁總覽頁設定
+   用途：一次顯示各 KPI 的當年度累計與達成率 / 同期比
+========================================================= */
+
+.dashboard.overview-mode .kpi,
+.dashboard.overview-mode .line-h,
+.dashboard.overview-mode .line-v,
+.dashboard.overview-mode .section,
+.dashboard.overview-mode svg,
+.dashboard.overview-mode .legend,
+.dashboard.overview-mode .note,
+.dashboard.overview-mode .unit{
+    display:none !important;
+}
+
+.overview-grid{
+    position:absolute;
+    left:55px;
+    top:135px;
+    width:970px;
+    height:420px;
+    display:none;
+    grid-template-columns:repeat(3, 1fr);
+    gap:18px;
+}
+
+.dashboard.overview-mode .overview-grid{
+    display:grid;
+}
+
+.overview-card{
+    background:rgba(255,255,255,0.55);
+    border:3px solid #8c8c8c;
+    border-radius:14px;
+    padding:18px 18px 14px 18px;
+    box-sizing:border-box;
+    animation:overviewCardIn 0.65s ease both;
+}
+
+.overview-card:nth-child(1){animation-delay:0.05s;}
+.overview-card:nth-child(2){animation-delay:0.12s;}
+.overview-card:nth-child(3){animation-delay:0.19s;}
+.overview-card:nth-child(4){animation-delay:0.26s;}
+.overview-card:nth-child(5){animation-delay:0.33s;}
+.overview-card:nth-child(6){animation-delay:0.40s;}
+
+.overview-card-title{
+    font-size:26px;
+    font-weight:800;
+    color:#333;
+    margin-bottom:4px;
+}
+
+.overview-card-subtitle{
+    font-size:14px;
+    font-weight:700;
+    color:#555;
+    margin-bottom:14px;
+}
+
+.overview-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-top:1px solid rgba(120,120,120,0.35);
+    padding-top:12px;
+    margin-top:10px;
+}
+
+.overview-label{
+    font-size:13px;
+    font-weight:700;
+    color:#444;
+    line-height:1.25;
+    max-width:130px;
+}
+
+.overview-value{
+    font-size:25px;
+    font-weight:900;
+    color:#3f5069;
+    white-space:nowrap;
+}
+
+.overview-footer{
+    position:absolute;
+    right:38px;
+    bottom:20px;
+    font-size:14px;
+    font-weight:700;
+    color:#4d5b66;
+    display:none;
+}
+
+.dashboard.overview-mode .overview-footer{
+    display:block;
+}
+
+@keyframes overviewCardIn{
+    from{
+        opacity:0;
+        transform:translateY(16px) scale(0.98);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+}
+
+
+/* =========================================================
+   輪播控制區
+========================================================= */
+.carousel-tools{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    margin-top:0;
+    color:#4d5b66;
+}
+
+.carousel-tools label{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:4px;
+    font-size:12px;
+}
+
+.carousel-tools input{
+    width:100%;
+    padding:6px 6px;
+    border:1px solid #9aa8b6;
+    border-radius:4px;
+    font-size:13px;
+    box-sizing:border-box;
+}
+
+
+/* 工具列面板視覺整理 */
+.excel-loader::before{
+    content:"";
+    position:absolute;
+    left:-6px;
+    top:-8px;
+    width:calc(100% + 12px);
+    height:calc(100% + 16px);
+    background:rgba(255,255,255,0.18);
+    border:1px solid rgba(255,255,255,0.35);
+    border-radius:8px;
+    z-index:-1;
+}
+
+</style>
+</head>
+<body>
+
+<div class="excel-loader">
+    <div class="excel-actions">
+        <label class="excel-btn">
+            匯入 Excel
+            <input type="file" id="excelFile" accept=".xlsx,.xls" />
+        </label>
+    </div>
+    <span id="excelStatus">狀態：未匯入 Excel，使用內建資料</span>
+    <div class="carousel-tools">
+        <label>輪播秒數
+            <input type="number" id="carouselSeconds" min="3" max="60" value="10">
+        </label>
+        <button type="button" class="excel-btn" id="carouselToggle" onclick="toggleCarousel()">開始輪播</button>
+    </div>
+</div>
+
+
+<div class="dashboard">
+    <div class="page-tabs" id="pageTabs"></div>
+
+    <div class="title-cn" id="titleCn"></div>
+    <div class="title-en" id="titleEn"></div>
+
+    <div class="kpi kpi1">
+        <div class="kpi-title" id="kpiTitle1"></div>
+        <div class="kpi-value" id="kpiValue1"></div>
+    </div>
+
+    <div class="kpi kpi2">
+        <div class="kpi-title" id="kpiTitle2"></div>
+        <div class="kpi-value" id="kpiValue2"></div>
+    </div>
+
+    <div class="line-h"></div>
+    <div class="line-v"></div>
+
+    <div class="section section1" id="section1"></div>
+    <div class="section section2" id="section2"></div>
+
+    <svg id="annualSvg" class="annual-svg" width="430" height="250" style="left:60px;top:325px;" overflow="visible">
+        <g id="annualGrid"></g>
+        <g id="annualBars"></g>
+    </svg>
+
+    <svg id="monthlySvg" class="monthly-svg" width="535" height="250" style="left:525px;top:325px;" overflow="visible">
+        <g id="monthlyGrid"></g>
+        <g id="targetLines"></g>
+        <g id="monthlyBars"></g>
+    </svg>
+
+    <div class="legend">
+        <div class="legend-row"><div class="legend-box"></div><div id="legendActual"></div></div>
+        <div class="legend-row"><div class="legend-line"></div><div id="legendTarget"></div></div>
+    </div>
+
+    <div class="overview-grid" id="overviewGrid"></div>
+    <div class="overview-footer" id="overviewFooter">KPI Overview</div>
+
+    <div class="note" id="note"></div>
+
+    <div class="unit unit1" id="unit1"></div>
+    <div class="unit unit2" id="unit2"></div>
+
+    
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+let pages = [{"title": "供應率", "subtitle": "Service rate", "leftKpiTitle": "當年度累計 (Year-to-Date)", "leftKpiValue": "98.2 %", "rightKpiTitle": "達成率 (Achievement Rate)", "rightKpiValue": "100.2 %", "leftChartTitle": "2021~2025年趨勢(Annual Trend)", "rightChartTitle": "2026年月推移(Monthly Trend)", "unitLeft": "單位： %", "unitRight": "單位： %", "note": "", "legendActual": "實績-Actual", "legendTarget": "目標-Target", "annualLabels": ["2021", "2022", "2023", "2024", "2025"], "annualValues": [97.9, 98.1, 98.3, 98.3, 98.2], "monthlyLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "monthlyValues": [98.1, 98.4, 98.1, null, null, null, null, null, null, null, null, null], "targetValues": [97.9, 97.9, 97.9, 97.9, 97.9, 97.9, 97.9, 97.9, 97.9, 97.9, 97.9, 97.9], "yMin": 95, "yMax": 99.2}, {"title": "庫存月數", "subtitle": "Stock Month", "leftKpiTitle": "當年度累計 (Year-to-Date)", "leftKpiValue": "0.67 %", "rightKpiTitle": "達成率 (Achievement Rate)", "rightKpiValue": "100.4 %", "leftChartTitle": "2021~2025年趨勢(Annual Trend)", "rightChartTitle": "2026年月推移(Monthly Trend)", "unitLeft": "單位：月(Month)", "unitRight": "單位：月(Month)", "note": "◆庫存月數依季節性需求設定月別目標<br>◆Monthly inventory targets are set based on seasonal demand", "legendActual": "實績-Actual", "legendTarget": "目標-Target", "annualLabels": ["2021", "2022", "2023", "2024", "2025"], "annualValues": [0.74, 0.7, 0.68, 0.67, 0.66], "monthlyLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "monthlyValues": [0.64, 0.7, 0.67, null, null, null, null, null, null, null, null, null], "targetValues": [0.6382150927, 0.6721904588, 0.6970578555, 0.7084458914, 0.6721904588, 0.6649308118, 0.6661326, 0.6503850757, 0.6276565724, 0.6305679714, 0.657611492, 0.6728878102], "yMin": 0.55, "yMax": 0.8}, {"title": "誤欠率", "subtitle": "Mis-shipping / Shortage Rate", "leftKpiTitle": "當年度累計 (Year-to-Date)", "leftKpiValue": "0.0 %", "rightKpiTitle": "達成率 (Achievement Rate)", "rightKpiValue": "100 %", "leftChartTitle": "2021~2025年趨勢(Annual Trend)", "rightChartTitle": "2026年月推移(Monthly Trend)", "unitLeft": "單位：PPM", "unitRight": "單位：PPM", "note": "", "legendActual": "實績-Actual", "legendTarget": "目標-Target", "annualLabels": ["2021", "2022", "2023", "2024", "2025"], "annualValues": [4.5, 5.5, 6.3, 7.3, 5.8], "monthlyLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "monthlyValues": [0, 0, 0, null, null, null, null, null, null, null, null, null], "targetValues": [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9], "yMin": 0, "yMax": 10}, {"title": "盤點結果", "subtitle": "Stocktaking Result", "leftKpiTitle": "差異金額同期比（絕對值）<br>YoY Variance (Abs. Value)", "leftKpiValue": "1.6 萬元", "rightKpiTitle": "差異率同期比<br>YoY Change (Discrepancy Rate)", "rightKpiValue": "0.002 %", "leftChartTitle": "2021~2025年差異金額 (annual trend)", "rightChartTitle": "2021~2025年差異比率(annual trend)", "unitLeft": "單位：萬元(NT$ 10 thousand)", "unitRight": "單位：%", "note": "◆盤點差異率（%）= 差異金額（絕對值）／盤點總金額 × 100%<br>◆Discrepancy Rate = Absolute Discrepancy Amount / Total Stock Amount", "legendActual": "實績-Actual", "legendTarget": "目標-Target", "annualLabels": ["2021", "2022", "2023", "2024", "2025"], "annualValues": [5.1, 8.3, 9.4, 18.1, 19.7], "monthlyLabels": ["2021", "2022", "2023", "2024", "2025"], "monthlyValues": [7.78153e-05, 0.0001218551, 0.0001199458, 0.0002327053, 0.0002510098], "targetValues": null, "yMin": 0, "yMax": 22, "rightYMin": 0, "rightYMax": 0.0003}, {"title": "太陽能發電", "subtitle": "Solar Power Generation", "leftKpiTitle": "當年度累計(Year-to-Date)", "leftKpiValue": "82.1 萬度", "rightKpiTitle": "同期比(Year-on-Year)", "rightKpiValue": "104.5 %", "leftChartTitle": "2022~2025年趨勢(Annual Trend)", "rightChartTitle": "2026年月推移(Monthly Trend)", "unitLeft": "單位：萬度(10,000 kWh)", "unitRight": "單位：萬度(10,000 kWh)", "note": "", "legendActual": "實績-Actual", "legendTarget": "預估-Forecast", "annualLabels": ["2022", "2023", "2024", "2025"], "annualValues": [0.8, 393.8, 372.4, 401], "monthlyLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "monthlyValues": [11, 34.4, 36.7, null, null, null, null, null, null, null, null, null], "targetValues": null, "yMin": 0, "yMax": 430, "rightYMin": 0, "rightYMax": 60}, {"title": "包材回收", "subtitle": "Parts Packaging Material Reuse", "leftKpiTitle": "當年度累計(Year-to-Date)", "leftKpiValue": "56 噸", "rightKpiTitle": "同期比(Year-on-Year)", "rightKpiValue": "84 %", "leftChartTitle": "2021~2025年趨勢(Annual Trend)", "rightChartTitle": "2026年月推移(Monthly Trend)", "unitLeft": "單位：噸(t)", "unitRight": "單位：噸(t)", "note": "", "legendActual": "實績-Actual", "legendTarget": "目標-Target", "annualLabels": ["2021", "2022", "2023", "2024", "2025"], "annualValues": [240, 251, 323, 332, 285], "monthlyLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "monthlyValues": [17.5, 31.5, 56, null, null, null, null, null, null, null, null, null], "targetValues": [17.4, 41.3, 66.7, 91.3, 112.6, 140.8, 164.8, 179.5, 204.4, 225.7, 246.1, 267.8], "yMin": 0, "yMax": 360, "rightYMin": 0, "rightYMax": 290}];
+
+let currentPage = 0;
+let timer = null;
+let annualIndex = 0;
+let monthlyIndex = 0;
+let renderToken = 0; // 用來避免上一頁的延遲動畫殘留到下一頁
+
+const annualXs = [55,135,215,295,375];
+const monthlyXs = [150,180,210,240,270,300,330,360,390,420,450,480];
+const chartBottom = 205;
+const chartHeight = 250;
+
+function svgEl(tag){
+    return document.createElementNS("http://www.w3.org/2000/svg", tag);
+}
+
+function addText(parent, className, x, y, text){
+    const t = svgEl("text");
+    t.setAttribute("class", className);
+    t.setAttribute("x", x);
+    t.setAttribute("y", y);
+    t.textContent = text;
+    parent.appendChild(t);
+}
+
+function addLine(parent, x1, y1, x2, y2, className="grid"){
+    const line = svgEl("line");
+    line.setAttribute("x1", x1);
+    line.setAttribute("y1", y1);
+    line.setAttribute("x2", x2);
+    line.setAttribute("y2", y2);
+    line.setAttribute("class", className);
+    parent.appendChild(line);
+}
+
+function addRect(parent, x, y, width, height){
+    const r = svgEl("rect");
+    r.setAttribute("class", "bar");
+    r.setAttribute("x", x);
+    r.setAttribute("y", y);
+    r.setAttribute("width", width);
+    r.setAttribute("height", height);
+    parent.appendChild(r);
+}
+
+function fmt(v){
+    if(v === null || v === undefined) return "";
+
+    // 小數顯示
+    if(Math.abs(v) < 0.01 && v !== 0){
+        return (v * 100).toFixed(3) + "%";
+    }
+
+    if(Math.abs(v) < 1){
+        return Number(v).toFixed(3)
+            .replace(/0+$/,'')
+            .replace(/\.$/,'');
+    }
+
+    return Number(v).toFixed(1)
+        .replace(/\.0$/,'');
+}
+
+function yScale(v, min, max){
+    if(max === min) return chartBottom;
+    return chartBottom - ((v-min)/(max-min))*chartHeight;
+}
+
+function validValues(values){
+    return values.filter(v => v !== null && v !== undefined && !Number.isNaN(v));
+}
+
+function drawGrid(){
+    const annualGrid = document.getElementById("annualGrid");
+    const monthlyGrid = document.getElementById("monthlyGrid");
+    annualGrid.innerHTML = "";
+    monthlyGrid.innerHTML = "";
+    [205,160,115,70,25].forEach(y => {
+        addLine(annualGrid, 20, y, 410, y);
+        addLine(monthlyGrid, 130, y, 500, y);
+    });
+}
+
+function drawStaticLabels(p){
+    const annualG = document.getElementById("annualBars");
+    const monthlyG = document.getElementById("monthlyBars");
+
+    p.annualLabels.forEach((label,i)=>{
+        addText(annualG, "axis", annualXs[i] || (55+i*80), 230, label);
+    });
+
+    p.monthlyLabels.forEach((label,i)=>{
+
+    // 盤點結果頁專用間距
+    let x;
+
+    if(currentPage === 3){
+        x = 170 + i * 70;
+    }else{
+        x = monthlyXs[i] || (150+i*30);
+    }
+
+    addText(monthlyG, "axis", x, 230, label);
+    });
+}
+
+function drawTarget(p){
+
+    const g = document.getElementById("targetLines");
+    g.innerHTML = "";
+
+    /* =====================================================
+       盤點結果頁（page-3）左圖：
+       加入 20 萬元目標線
+    ===================================================== */
+if(currentPage === 3){
+
+    const g = document.getElementById("annualBars");
+
+    const targetValue = 20;
+
+    const y =
+        chartBottom -
+        ((targetValue - p.yMin) / (p.yMax - p.yMin))
+        * chartHeight;
+
+    addLine(g, 20, y, 410, y, "target");
+
+    addText(g, "label", 430, y, "20.0");
+
+    return;
+}
+
+    // 其他頁面維持原本邏輯
+    if(!p.targetValues) return;
+
+    const min = p.rightYMin ?? p.yMin;
+    const max = p.rightYMax ?? p.yMax;
+    const vals = p.targetValues;
+
+    let points = [];
+
+    vals.forEach((v,i)=>{
+        if(v !== null && v !== undefined){
+            const x = monthlyXs[i] || (150+i*30);
+            const y = yScale(v, min, max);
+            points.push([x,y,v]);
+        }
+    });
+
+    for(let i=0;i<points.length-1;i++){
+        addLine(
+            g,
+            points[i][0],
+            points[i][1],
+            points[i+1][0],
+            points[i+1][1],
+            "target"
+        );
+    }
+
+    if(points.length){
+        const last = points[points.length-1];
+
+        addText(
+            g,
+            "label",
+            last[0]+20,
+            last[1]+5,
+            fmt(last[2])
+        );
+    }
+}
+
+function addAnnualBar(i){
+    const p = pages[currentPage];
+    const g = document.getElementById("annualBars");
+    const value = p.annualValues[i];
+    if(value === null || value === undefined) return;
+    const x = annualXs[i] || (55+i*80);
+    const y = yScale(value, p.yMin, p.yMax);
+    const h = chartBottom - y;
+    addRect(g, x-17.5, y, 35, h);
+    addText(g, "label value-label", x, y-10, fmt(value));
+}
+
+function addMonthlyBar(i){
+    const p = pages[currentPage];
+    const g = document.getElementById("monthlyBars");
+    const valid = [];
+    p.monthlyValues.forEach((v,idx)=>{
+        if(v !== null && v !== undefined) valid.push({value:v, idx});
+    });
+    const item = valid[i];
+    if(!item) return;
+    let x;
+    if(currentPage === 3){
+    x = 170 + item.idx * 70;// 盤點結果頁專用間距
+    }else{
+    x = monthlyXs[item.idx] || (150+item.idx*30);
+    }
+    const min = p.rightYMin ?? p.yMin;
+    const max = p.rightYMax ?? p.yMax;
+    const y = yScale(item.value, min, max);
+    const h = chartBottom - y;
+    addRect(g, x-11, y, 22, h);
+    addText(g, "label", x, y-10, fmt(item.value));
+}
+
+function clearBars(){
+    document.getElementById("annualBars").innerHTML = "";
+    document.getElementById("monthlyBars").innerHTML = "";
+}
+
+// 清除目標線，讓有橘色目標線的頁面可以在最後才顯示
+function clearTargetLines(){
+    document.getElementById("targetLines").innerHTML = "";
+}
+
+function setKpiValue(el, text){
+    el.innerHTML = text.replace(/(\\s*)(%|噸|萬元|萬度)$/,' <span>$2</span>');
+}
+
+/* =========================================================
+   KPI 數字計數動畫
+   用途：
+   圖表長條與數值標籤出現後，
+   上方 KPI 數字才從 0 慢慢跑到正式數值
+========================================================= */
+
+function extractNumberInfo(text){
+    const source = String(text);
+    const match = source.match(/-?\d+(?:\.\d+)?/);
+
+    if(!match){
+        return null;
+    }
+
+    const numberText = match[0];
+
+    return {
+        original: source,
+        numberText: numberText,
+        value: Number(numberText),
+        decimals: numberText.includes(".") ? numberText.split(".")[1].length : 0
+    };
+}
+
+function kpiZeroText(text){
+    const info = extractNumberInfo(text);
+
+    if(!info){
+        return text;
+    }
+
+    const zero = info.decimals > 0 ? "0." + "0".repeat(info.decimals) : "0";
+
+    return info.original.replace(info.numberText, zero);
+}
+
+function animateKpiValue(el, finalText, duration=900, token=renderToken){
+    const info = extractNumberInfo(finalText);
+
+    if(!info){
+        if(token === renderToken){
+            setKpiValue(el, finalText);
+        }
+        return;
+    }
+
+    const startTime = performance.now();
+
+    function step(now){
+        // 如果已經切換到下一頁，上一頁的 KPI 計數動畫直接停止
+        if(token !== renderToken){
+            return;
+        }
+
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = info.value * eased;
+        const displayNumber = current.toFixed(info.decimals);
+        const displayText = info.original.replace(info.numberText, displayNumber);
+
+        setKpiValue(el, displayText);
+
+        if(progress < 1){
+            requestAnimationFrame(step);
+        }else{
+            setKpiValue(el, finalText);
+        }
+    }
+
+    requestAnimationFrame(step);
+}
+
+function animateKpiNumbers(p, done, token=renderToken){
+    // 如果已經切換到下一頁，就不執行上一頁 KPI 計數
+    if(token !== renderToken){
+        return;
+    }
+
+    const kpi1 = document.querySelector(".kpi1");
+    const kpi2 = document.querySelector(".kpi2");
+    const value1 = document.getElementById("kpiValue1");
+    const value2 = document.getElementById("kpiValue2");
+
+    [kpi1, kpi2].forEach(card=>{
+        card.classList.remove("kpi-counting");
+        void card.offsetWidth;
+        card.classList.add("kpi-counting");
+    });
+
+    [value1, value2].forEach(value=>{
+        value.classList.remove("kpi-counting-number");
+        void value.offsetWidth;
+        value.classList.add("kpi-counting-number");
+    });
+
+    animateKpiValue(value1, p.leftKpiValue, 900, token);
+    animateKpiValue(value2, p.rightKpiValue, 900, token);
+
+    setTimeout(()=>{
+        if(token !== renderToken){
+            return;
+        }
+
+        if(typeof done === "function"){
+            done();
+        }
+    }, 950);
+}
+
+
+/* =========================================================
+   首頁總覽頁
+   顯示所有 KPI 的當年度累計與達成率 / 同期比
+========================================================= */
+
+function shortKpiTitle(text){
+    return String(text || "")
+        .replace(/<br\s*\/?>/gi, " / ")
+        .replace(/\([^)]*\)/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function renderOverview(){
+    pause();
+    renderToken++; // 切到總覽頁時，停止上一頁尚未完成的延遲動畫
+
+    currentPage = -1;
+
+    document.body.style.background = "#dcebf7";
+
+    const dashboard = document.querySelector(".dashboard");
+    dashboard.className = "dashboard overview-mode";
+
+    dashboard.classList.remove("page-fade");
+    void dashboard.offsetWidth;
+    dashboard.classList.add("page-fade");
+
+    document.getElementById("titleCn").textContent = "KPI 總覽";
+    document.getElementById("titleEn").textContent = "KPI Overview";
+
+    const grid = document.getElementById("overviewGrid");
+    grid.innerHTML = "";
+
+    pages.forEach((p)=>{
+        const card = document.createElement("div");
+        card.className = "overview-card";
+
+        card.innerHTML = `
+            <div class="overview-card-title">${p.title}</div>
+            <div class="overview-card-subtitle">${p.subtitle || ""}</div>
+
+            <div class="overview-row">
+                <div class="overview-label">${shortKpiTitle(p.leftKpiTitle)}</div>
+                <div class="overview-value">${p.leftKpiValue}</div>
+            </div>
+
+            <div class="overview-row">
+                <div class="overview-label">${shortKpiTitle(p.rightKpiTitle)}</div>
+                <div class="overview-value">${p.rightKpiValue}</div>
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+
+    const footer = document.getElementById("overviewFooter");
+    footer.textContent = "資料來源：目前匯入 / 保存資料";
+
+    [...document.querySelectorAll(".page-tab")].forEach((tab,i)=>{
+        tab.classList.toggle("active", i === 0);
+    });
+}
+
+function renderPage(index, animate=false){
+    pause();
+    renderToken++; // 每次切頁都更新 token，讓上一頁動畫失效
+    const thisRenderToken = renderToken;
+    currentPage = index;
+    const p = pages[currentPage];
+
+    // 依頁面切換整個瀏覽器背景色
+    // page-4：太陽能發電、page-5：包材回收 → 淡綠色
+    // 其他頁面 → 原本藍灰色
+    if(currentPage === 4 || currentPage === 5){
+        document.body.style.background = "#dfeee2";
+    }else{
+        document.body.style.background = "#dcebf7";
+    }
+
+    // 讓每一頁都能用 .dashboard.page-X 單獨控制圖表位置
+    const dashboard = document.querySelector(".dashboard");
+    dashboard.className = `dashboard page-${currentPage}`;
+
+    // 頁面淡入動畫：每次切換頁面重新觸發
+    dashboard.classList.remove("page-fade");
+    void dashboard.offsetWidth;
+    dashboard.classList.add("page-fade");
+
+    document.getElementById("titleCn").textContent = p.title;
+    document.getElementById("titleEn").textContent = p.subtitle;
+    document.getElementById("kpiTitle1").innerHTML = p.leftKpiTitle;
+    document.getElementById("kpiTitle2").innerHTML = p.rightKpiTitle;
+
+    // 若是動畫播放，KPI 先顯示 0，等圖表數值標籤完成後再開始計數
+    if(animate){
+        setKpiValue(document.getElementById("kpiValue1"), kpiZeroText(p.leftKpiValue));
+        setKpiValue(document.getElementById("kpiValue2"), kpiZeroText(p.rightKpiValue));
+    }else{
+        setKpiValue(document.getElementById("kpiValue1"), p.leftKpiValue);
+        setKpiValue(document.getElementById("kpiValue2"), p.rightKpiValue);
+    }
+
+    document.getElementById("section1").textContent = p.leftChartTitle;
+    document.getElementById("section2").textContent = p.rightChartTitle;
+    document.getElementById("unit1").textContent = p.unitLeft;
+    document.getElementById("unit2").textContent = p.unitRight;
+    document.getElementById("legendActual").textContent = p.legendActual;
+    document.getElementById("legendTarget").textContent = p.legendTarget || "";
+    const noteEl = document.getElementById("note");
+    // 讓每一頁 note 都有自己的 class，可單獨調整排版
+    noteEl.className = `note note-page-${currentPage}`;
+    noteEl.innerHTML = p.note || "";
+    
+    const pageIndicator = document.getElementById("pageIndicator");
+    if(pageIndicator){
+        pageIndicator.textContent = `${currentPage+1}/${pages.length}`;
+    }
+    
+
+    [...document.querySelectorAll(".page-tab")].forEach((tab,i)=>tab.classList.toggle("active", i===currentPage+1));
+
+    drawGrid();
+    clearBars();
+    clearTargetLines();
+    drawStaticLabels(p);
+
+    if(animate) play(thisRenderToken);
+    else {
+        p.annualValues.forEach((_,i)=>addAnnualBar(i));
+        validValues(p.monthlyValues).forEach((_,i)=>addMonthlyBar(i));
+
+        // 目標線最後顯示：先出現長條，再出現橘色目標線
+        drawTarget(p);
+    }
+}
+
+function play(thisRenderToken=renderToken){
+    pause();
+    const p = pages[currentPage];
+    clearBars();
+    clearTargetLines();
+    drawStaticLabels(p);
+    annualIndex = 0;
+    monthlyIndex = 0;
+    const monthlyCount = validValues(p.monthlyValues).length;
+
+    timer = setInterval(()=>{
+        if(annualIndex < p.annualValues.length){
+            addAnnualBar(annualIndex++);
+            return;
+        }
+        if(monthlyIndex < monthlyCount){
+            addMonthlyBar(monthlyIndex++);
+            return;
+        }
+
+        pause();
+
+        // 等最後一個數值標籤浮現後
+        setTimeout(()=>{
+
+            // 如果已經切換到下一頁，停止上一頁後續動畫
+            if(thisRenderToken !== renderToken){
+                return;
+            }
+
+            // 先顯示橘色目標線
+            drawTarget(p);
+
+            // 最後才開始 KPI 數字計數
+            setTimeout(()=>{
+                if(thisRenderToken !== renderToken){
+                    return;
+                }
+                animateKpiNumbers(p, null, thisRenderToken);
+            }, 950);
+
+        }, 850);
+    }, 700);
+}
+
+function pause(){
+    if(timer){
+        clearInterval(timer);
+        timer = null;
+    }
+}
+
+
+
+/* =========================================================
+   資料保存與匯出功能
+   1. 匯入 Excel 後，自動保存到瀏覽器 localStorage
+   2. 重新整理網頁後，自動載入上次匯入的資料
+   3. 可下載「已寫入目前資料」的新 HTML 檔
+========================================================= */
+
+const STORAGE_KEY = "kpi_dashboard_saved_pages_v1";
+
+function savePagesToLocal(){
+    try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
+    }catch(e){
+        console.warn("無法保存資料到瀏覽器：", e);
+    }
+}
+
+function loadPagesFromLocal(){
+    try{
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if(!saved) return false;
+
+        const parsed = JSON.parse(saved);
+        if(!Array.isArray(parsed) || !parsed.length) return false;
+
+        pages = parsed;
+        const status = document.getElementById("excelStatus");
+        if(status){
+            status.textContent = "狀態：已載入上次保存資料";
+        }
+        return true;
+    }catch(e){
+        console.warn("無法讀取保存資料：", e);
+        return false;
+    }
+}
+
+function clearSavedData(){
+    localStorage.removeItem(STORAGE_KEY);
+    alert("已清除瀏覽器保存資料。重新整理後會回到 HTML 內建資料。");
+}
+
+function downloadCurrentHtml(){
+    let htmlText = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+
+    const pagesText = "let pages = " + JSON.stringify(pages, null, 2) + ";";
+    htmlText = htmlText.replace(/let pages = \[[\s\S]*?\];\s*let currentPage =/, pagesText + "\n\nlet currentPage =");
+
+    const blob = new Blob([htmlText], {type:"text/html;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "KPI看板_目前看板資料版.html";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+}
+
+function animateKpiCards(){
+    const cards = document.querySelectorAll(".kpi");
+    const values = document.querySelectorAll(".kpi-value");
+
+    cards.forEach(card=>{
+        card.classList.remove("kpi-animate");
+        void card.offsetWidth;
+        card.classList.add("kpi-animate");
+    });
+
+    values.forEach(value=>{
+        value.classList.remove("kpi-number-animate");
+        void value.offsetWidth;
+        value.classList.add("kpi-number-animate");
+    });
+}
+
+
+/* =========================================================
+   Excel 讀取功能
+   對應 Excel 工作表：
+   1. 基本設定
+   2. 年度趨勢
+   3. 月推移
+   4. 目標線
+========================================================= */
+
+const defaultPages = JSON.parse(JSON.stringify(pages));
+
+function cellValue(v){
+    if(v === undefined || v === null || v === "") return null;
+    return v;
+}
+
+function normalizeNumber(v){
+    if(v === undefined || v === null || v === "") return null;
+    if(typeof v === "number") return v;
+    const s = String(v).trim();
+    if(s === "") return null;
+    const n = Number(s.replace(/,/g,""));
+    return Number.isNaN(n) ? s : n;
+}
+
+/* =========================================================
+   KPI 大數字格式化
+   解決 Excel 百分比被讀成 0.979、1、0.811 的問題
+
+   Excel 若輸入 97.9%，JavaScript 會讀成 0.979
+   因此這裡會自動轉成 97.9 %
+========================================================= */
+function formatKpiValueFromExcel(pageTitle, value, side){
+    if(value === undefined || value === null || value === "") return null;
+
+    // 如果 Excel 已經輸入成「98.2 %」、「82.1 萬度」這種文字，就直接使用
+    if(typeof value === "string"){
+        return value;
+    }
+
+    const n = Number(value);
+    if(Number.isNaN(n)) return String(value);
+
+    // 這些頁面的 KPI 多數是百分比或達成率
+    const percentPages = ["供應率", "庫存月數", "誤欠率"];
+
+    // 左上 KPI：供應率、庫存月數、誤欠率
+    if(side === "left" && percentPages.includes(pageTitle)){
+        return (n <= 1 ? n * 100 : n).toFixed(1).replace(/\.0$/,"") + " %";
+    }
+
+    // 右上 KPI：達成率 / 同期比，大多是百分比
+    if(side === "right"){
+        if(pageTitle === "盤點結果") return String(value);
+        return (n <= 10 ? n * 100 : n).toFixed(1).replace(/\.0$/,"") + " %";
+    }
+
+    return String(value);
+}
+
+function getRows(workbook, sheetName){
+    const ws = workbook.Sheets[sheetName];
+    if(!ws) return [];
+    return XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+}
+
+function pageByTitle(title){
+    return pages.find(p => p.title === title);
+}
+
+function updateFromBasic(rows){
+    for(let r=1; r<rows.length; r++){
+        const row = rows[r];
+        const title = cellValue(row[0]);
+        if(!title) continue;
+        const p = pageByTitle(title);
+        if(!p) continue;
+
+        if(cellValue(row[1]) !== null){
+            const formattedLeft = formatKpiValueFromExcel(title, row[1], "left");
+            if(formattedLeft !== null) p.leftKpiValue = formattedLeft;
+        }
+
+        if(cellValue(row[2]) !== null){
+            const formattedRight = formatKpiValueFromExcel(title, row[2], "right");
+            if(formattedRight !== null) p.rightKpiValue = formattedRight;
+        }
+
+        if(cellValue(row[3]) !== null) p.note = String(row[3]);
+    }
+}
+
+function updateFromAnnual(rows){
+    for(let r=1; r<rows.length; r++){
+        const row = rows[r];
+        const title = cellValue(row[0]);
+        if(!title) continue;
+        const p = pageByTitle(title);
+        if(!p) continue;
+
+        const labels = [];
+        const values = [];
+
+        for(let i=0; i<5; i++){
+            const label = cellValue(row[1+i]);
+            const value = normalizeNumber(row[6+i]);
+            if(label !== null || value !== null){
+                labels.push(label === null ? "" : String(label));
+                values.push(value);
+            }
+        }
+
+        if(labels.length) p.annualLabels = labels;
+        if(values.length) p.annualValues = values;
+    }
+}
+
+function updateFromMonthly(rows){
+    for(let r=1; r<rows.length; r++){
+        const row = rows[r];
+        const title = cellValue(row[0]);
+        if(!title) continue;
+        const p = pageByTitle(title);
+        if(!p) continue;
+
+        const labels = [];
+        const values = [];
+
+        for(let i=0; i<12; i++){
+            const label = cellValue(row[1+i]);
+            const value = normalizeNumber(row[13+i]);
+
+            if(label !== null){
+                labels.push(String(label));
+            }else{
+                labels.push("");
+            }
+            values.push(value);
+        }
+
+        p.monthlyLabels = labels;
+        p.monthlyValues = values;
+    }
+}
+
+function updateFromTargets(rows){
+    for(let r=1; r<rows.length; r++){
+        const row = rows[r];
+        const title = cellValue(row[0]);
+        if(!title) continue;
+        const p = pageByTitle(title);
+        if(!p) continue;
+
+        const targets = [];
+        let hasTarget = false;
+
+        for(let i=0; i<12; i++){
+            const value = normalizeNumber(row[1+i]);
+            targets.push(value);
+            if(value !== null) hasTarget = true;
+        }
+
+        p.targetValues = hasTarget ? targets : null;
+    }
+}
+
+async function loadExcelFile(file){
+    if(typeof XLSX === "undefined"){
+        alert("無法讀取 Excel：XLSX 套件未載入。請確認網路可連線，或改用 kpi-data.js 版本。");
+        return;
+    }
+
+    const status = document.getElementById("excelStatus");
+    status.textContent = "狀態：讀取中...";
+
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, {type:"array"});
+
+    pages = JSON.parse(JSON.stringify(defaultPages));
+
+    updateFromBasic(getRows(workbook, "基本設定"));
+    updateFromAnnual(getRows(workbook, "年度趨勢"));
+    updateFromMonthly(getRows(workbook, "月推移"));
+    updateFromTargets(getRows(workbook, "目標線"));
+
+    savePagesToLocal();
+
+    buildTabs();
+    if(currentPage === -1){
+        renderOverview();
+    }else{
+        renderPage(currentPage, true);
+    }
+    fitDashboard();
+
+    status.textContent = "狀態：已載入並保存 " + file.name;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("excelFile");
+    if(input){
+        input.addEventListener("change", async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if(file) await loadExcelFile(file);
+        });
+    }
+});
+
+function nextPage(){
+    if(currentPage === -1){
+        renderPage(0, true);
+    }else{
+        renderPage((currentPage + 1) % pages.length, true);
+    }
+}
+
+function prevPage(){
+    if(currentPage === -1){
+        renderPage(pages.length - 1, true);
+    }else{
+        renderPage((currentPage - 1 + pages.length) % pages.length, true);
+    }
+}
+/* =========================================================
+   自動輪播功能
+   使用者可自行設定輪播秒數
+   輪播順序：總覽 → 供應率 → 庫存月數 → 誤欠率 → 盤點結果 → 太陽能發電 → 包材回收
+========================================================= */
+
+let carouselTimer = null;
+
+function getCarouselSeconds(){
+    const input = document.getElementById("carouselSeconds");
+    const value = Number(input?.value || 10);
+
+    if(Number.isNaN(value) || value < 3){
+        return 3;
+    }
+
+    return value;
+}
+
+function goNextCarouselPage(){
+    if(currentPage === -1){
+        renderPage(0, true);
+        return;
+    }
+
+    if(currentPage >= pages.length - 1){
+        renderOverview();
+        return;
+    }
+
+    renderPage(currentPage + 1, true);
+}
+
+function startCarousel(){
+    stopCarousel();
+
+    const seconds = getCarouselSeconds();
+    const button = document.getElementById("carouselToggle");
+
+    if(button){
+        button.textContent = "停止輪播";
+    }
+
+    carouselTimer = setInterval(()=>{
+        goNextCarouselPage();
+    }, seconds * 1000);
+}
+
+function stopCarousel(){
+    if(carouselTimer){
+        clearInterval(carouselTimer);
+        carouselTimer = null;
+    }
+
+    const button = document.getElementById("carouselToggle");
+
+    if(button){
+        button.textContent = "開始輪播";
+    }
+}
+
+function toggleCarousel(){
+    if(carouselTimer){
+        stopCarousel();
+    }else{
+        startCarousel();
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("carouselSeconds");
+
+    if(input){
+        input.addEventListener("change", () => {
+            if(carouselTimer){
+                startCarousel();
+            }
+        });
+    }
+});
+
+
+function buildTabs(){
+    const tabs = document.getElementById("pageTabs");
+    tabs.innerHTML = "";
+
+    const overviewBtn = document.createElement("button");
+    overviewBtn.className = "page-tab";
+    overviewBtn.textContent = "總覽";
+    overviewBtn.onclick = () => renderOverview();
+    tabs.appendChild(overviewBtn);
+
+    pages.forEach((p,i)=>{
+        const btn = document.createElement("button");
+        btn.className = "page-tab";
+        btn.textContent = p.title;
+        btn.onclick = () => renderPage(i, true);
+        tabs.appendChild(btn);
+    });
+}
+
+function fitDashboard() {
+    const dashboard = document.querySelector(".dashboard");
+    const baseWidth = 1080;
+    const baseHeight = 620;
+    const scaleX = window.innerWidth / baseWidth;
+    const scaleY = window.innerHeight / baseHeight;
+    const scale = Math.min(scaleX, scaleY);
+    dashboard.style.transform = `scale(${scale})`;
+}
+
+window.addEventListener("load", () => {
+    loadPagesFromLocal();
+    buildTabs();
+    renderOverview();
+    fitDashboard();
+});
+window.addEventListener("resize", fitDashboard);
+</script>
+</body>
+</html>
